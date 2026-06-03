@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>✦ for you</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── TOKENS ── */
+:root {
+  --bg:        #0d1117;
+  --bg2:       #111820;
+  --surface:   rgba(255,255,255,0.055);
+  --border:    rgba(255,255,255,0.09);
+  --border-hi: rgba(255,255,255,0.18);
+  --text:      #e8eaf0;
+  --text-2:    rgba(232,234,240,0.5);
+  --text-3:    rgba(232,234,240,0.28);
+  --amber:     #f5a623;
+  --teal:      #3ecfcf;
+  --violet:    #8b7cf6;
+  --glow-a:    rgba(245,166,35,0.22);
+  --glow-t:    rgba(62,207,207,0.18);
+
+  /* safe areas for notch/home indicator */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+html {
+  height: 100%;
+  /* prevent bounce on iOS */
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  height: 100%;
+  background: var(--bg);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text);
+  overflow: hidden;
+  /* hardware acceleration */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── CANVAS ── */
+#bg-canvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── SCENE SYSTEM ── */
+.scene {
+  position: fixed; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--sat) + 1.5rem) calc(var(--sar) + 1.5rem) calc(var(--sab) + 1.5rem) calc(var(--sal) + 1.5rem);
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  /* use will-change only while animating — set by JS */
+}
+.scene.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── TRANSITION FLASH ── */
+#flash {
+  position: fixed; inset: 0;
+  background: #fff;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ════════════════════════════════
+   SCENE 1  —  INTRO
+════════════════════════════════ */
+#scene-intro { gap: clamp(1.2rem, 4vh, 2rem); text-align: center; }
+
+.tag-pill {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.tag-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+@keyframes dotPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+.intro-heading {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: clamp(1.75rem, 7.5vw, 3.2rem);
+  font-weight: 400;
+  line-height: 1.2;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.intro-heading em {
+  font-style: italic;
+  color: var(--amber);
+}
+
+#typing-span {
+  display: inline;
+}
+.caret {
+  display: inline-block;
+  width: 2.5px; height: 0.85em;
+  background: var(--amber);
+  vertical-align: middle;
+  margin-left: 2px;
+  border-radius: 2px;
+  animation: caretBlink 1s step-end infinite;
+}
+@keyframes caretBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+.intro-sub {
+  font-size: clamp(0.78rem, 2.5vw, 0.88rem);
+  color: var(--text-2);
+  font-weight: 300;
+  line-height: 1.6;
+  max-width: 280px;
+}
+
+/* ── CTA BUTTON ── */
+.btn-cta {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 0.55rem;
+  padding: 0.85rem 1.8rem;
+  background: var(--amber);
+  color: #0d1117;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  border: none; border-radius: 12px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 4px 20px rgba(245,166,35,0.35);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.btn-cta:active {
+  transform: scale(0.96);
+  filter: brightness(0.9);
+}
+@media (hover: hover) {
+  .btn-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,166,35,0.45);
+  }
+}
+.btn-cta-icon { font-size: 1rem; }
+
+/* ════════════════════════════════
+   SCENE 2  —  GIFT BOX
+════════════════════════════════ */
+#scene-box { gap: clamp(1rem, 3.5vh, 1.8rem); text-align: center; }
+
+.box-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+/* Gift Box SVG container */
+.gift-stage {
+  position: relative;
+  width: min(180px, 46vw);
+  height: min(180px, 46vw);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.gift-stage svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* The actual floating animation on a wrapper */
+.gift-floater {
+  animation: gFloat 3.2s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+@keyframes gFloat {
+  0%,100% { transform: translateY(0) rotate(-0.5deg); }
+  50%      { transform: translateY(-10px) rotate(0.5deg); }
+}
+
+.box-cta-hint {
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  animation: hintPulse 2.5s ease-in-out infinite;
+}
+@keyframes hintPulse { 0%,100%{opacity:0.3} 50%{opacity:0.75} }
+
+/* ════════════════════════════════
+   SCENE 3  —  LETTERS
+════════════════════════════════ */
+#scene-letters {
+  justify-content: flex-start;
+  padding-top: calc(var(--sat) + max(1.2rem, 3vh));
+  padding-bottom: calc(var(--sab) + max(1.2rem, 3vh));
+  overflow: hidden;
+}
+
+.letters-inner {
+  width: 100%;
+  max-width: 480px;
+  /* fill the full height available inside the scene */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.25rem;
+}
+
+/* progress */
+.prog-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0 0.25rem;
+}
+.prog-bar-track {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.prog-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber), var(--teal));
+  border-radius: inherit;
+  transition: width 0.5s cubic-bezier(0.23,1,0.32,1);
+}
+.prog-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+
+/* card */
+.letter-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: clamp(1.4rem, 5vw, 2.2rem);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 1px 0 rgba(255,255,255,0.06) inset;
+  position: relative;
+  overflow: hidden;
+  /* stretch to fill remaining vertical space */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 0;
+}
+.card-top-line {
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--border-hi) 40%, var(--border-hi) 60%, transparent 100%);
+}
+
+.card-num {
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 0.65rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+.card-num-accent {
+  display: inline-block;
+  width: 14px; height: 1.5px;
+  background: var(--amber);
+  border-radius: 99px;
+}
+
+.card-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: clamp(1.25rem, 5vw, 1.65rem);
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.25;
+  margin-bottom: 0.9rem;
+}
+.card-title em {
+  font-style: italic;
+  color: var(--teal);
+}
+
+.card-rule {
+  width: 28px; height: 1.5px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+  margin-bottom: 0.9rem;
+  border-radius: 99px;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.card-body {
+  font-size: clamp(0.85rem, 2.8vw, 0.95rem);
+  font-weight: 300;
+  color: rgba(232,234,240,0.72);
+  line-height: 1.85;
+  letter-spacing: 0.005em;
+  flex: 1;
+}
+
+.card-deco {
+  position: absolute;
+  right: 1.4rem; bottom: 1.2rem;
+  font-size: 5rem;
+  opacity: 0.04;
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+
+/* card footer — sits at bottom of the stretching card */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+.card-footer-tag {
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.card-footer-dots {
+  display: flex; gap: 5px;
+}
+.fd {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.fd.on {
+  background: var(--amber);
+  box-shadow: 0 0 6px rgba(245,166,35,0.6);
+}
+.fd.past { background: rgba(245,166,35,0.3); }
+
+/* nav row */
+.letter-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  padding: 0 0.1rem;
+}
+.btn-ghost {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  width: 100%;
+}
+.btn-ghost:disabled { opacity: 0.25; pointer-events: none; }
+.btn-ghost:active { transform: scale(0.96); }
+@media (hover: hover) { .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); } }
+
+.btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(245,166,35,0.2), rgba(62,207,207,0.13));
+  border: 1px solid rgba(245,166,35,0.35);
+  border-radius: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  width: 100%;
+}
+.btn-primary:active { transform: scale(0.96); }
+@media (hover: hover) {
+  .btn-primary:hover {
+    background: linear-gradient(135deg, rgba(245,166,35,0.3), rgba(62,207,207,0.2));
+    box-shadow: 0 4px 18px rgba(245,166,35,0.2);
+  }
+}
+
+.nav-spacer { display: none; }
+
+.swipe-hint {
+  text-align: center;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ════════════════════════════════
+   SCENE 4  —  ENDING
+════════════════════════════════ */
+#scene-ending { gap: clamp(1rem, 3.5vh, 1.8rem); text-align: center; padding-left: 2rem; padding-right: 2rem; }
+
+.ending-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.3rem 0.85rem;
+  background: rgba(62,207,207,0.08);
+  border: 1px solid rgba(62,207,207,0.2);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
+
+.ending-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.ending-title em {
+  font-style: italic;
+  background: linear-gradient(135deg, var(--amber) 0%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ending-body {
+  font-size: clamp(0.82rem, 2.8vw, 0.92rem);
+  font-weight: 300;
+  color: var(--text-2);
+  line-height: 1.75;
+  max-width: 300px;
+}
+
+/* portal button */
+.btn-portal {
+  position: relative;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  padding: 1rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-portal:active { transform: scale(0.97); }
+@media (hover: hover) {
+  .btn-portal:hover {
+    border-color: rgba(245,166,35,0.4);
+    box-shadow: 0 8px 30px rgba(245,166,35,0.15);
+    transform: translateY(-2px);
+  }
+  .btn-portal:hover .portal-hint { opacity: 1; }
+}
+/* on touch: tap once shows hint, tap twice opens */
+.btn-portal.hint-visible .portal-hint { opacity: 1; }
+
+.portal-label {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.portal-sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.portal-hint {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 0.72rem;
+  color: var(--amber);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.ending-sign {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* ════════════════════════════════
+   AMBIENT NOISE GRAIN
+════════════════════════════════ */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.45;
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="flash"></div>
+
+<!-- ═══════ SCENE 1: INTRO ═══════ -->
+<section id="scene-intro" class="scene active">
+  <div class="tag-pill"><span class="tag-dot"></span>ASIK DI SCAN </div>
+
+  <h1 class="intro-heading">
+    <span id="typing-span"></span><span class="caret" id="caret"></span>
+  </h1>
+
+  <p class="intro-sub" id="intro-sub" style="opacity:0">
+  KIW.<br>coba pencet dah
+  </p>
+
+  <button class="btn-cta" id="btn-open" style="opacity:0">
+    <span class="btn-cta-icon">📦</span> pencet pencet
+  </button>
+</section>
+
+<!-- ═══════ SCENE 2: GIFT BOX ═══════ -->
+<section id="scene-box" class="scene">
+  <p class="box-eyebrow" id="box-eyebrow" style="opacity:0">APA YA ENIH?</p>
+
+  <div class="gift-stage" id="gift-stage" style="opacity:0">
+    <div class="gift-floater" id="gift-floater">
+      <svg id="box-svg" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="fg" x="-25%" y="-25%" width="150%" height="150%">
+            <feGaussianBlur stdDeviation="5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="fs" x="-15%" y="-15%" width="130%" height="130%">
+            <feGaussianBlur stdDeviation="2.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <linearGradient id="gBox" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1e2a38"/>
+            <stop offset="100%" stop-color="#16222e"/>
+          </linearGradient>
+          <linearGradient id="gLid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#243040"/>
+            <stop offset="100%" stop-color="#1a2535"/>
+          </linearGradient>
+          <linearGradient id="gRib" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#3ecfcf"/>
+            <stop offset="50%" stop-color="#f5a623"/>
+            <stop offset="100%" stop-color="#3ecfcf"/>
+          </linearGradient>
+          <linearGradient id="gRibV" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f5a623"/>
+            <stop offset="100%" stop-color="#3ecfcf"/>
+          </linearGradient>
+        </defs>
+
+        <!-- shadow -->
+        <ellipse cx="90" cy="170" rx="45" ry="7" fill="rgba(0,0,0,0.28)" filter="url(#fs)"/>
+
+        <!-- box body -->
+        <rect x="28" y="93" width="124" height="72" rx="10" fill="url(#gBox)" filter="url(#fs)"/>
+        <rect x="28" y="93" width="124" height="26" rx="10" fill="rgba(255,255,255,0.04)"/>
+        <!-- body border top shine -->
+        <rect x="28" y="93" width="124" height="1" rx="1" fill="rgba(255,255,255,0.12)"/>
+
+        <!-- vertical ribbon body -->
+        <rect x="83" y="93" width="14" height="72" fill="url(#gRibV)" opacity="0.55"/>
+
+        <!-- lid -->
+        <rect id="svg-lid" x="21" y="68" width="138" height="30" rx="9" fill="url(#gLid)" filter="url(#fs)"/>
+        <rect x="21" y="68" width="138" height="11" rx="9" fill="rgba(255,255,255,0.07)"/>
+        <rect x="21" y="68" width="138" height="1" rx="1" fill="rgba(255,255,255,0.15)"/>
+
+        <!-- horizontal ribbon on lid -->
+        <rect x="21" y="79" width="138" height="10" rx="3" fill="url(#gRib)" opacity="0.55"/>
+
+        <!-- bow left -->
+        <ellipse cx="76" cy="64" rx="18" ry="11" fill="#1d2d3e" transform="rotate(-22 76 64)" filter="url(#fg)"/>
+        <ellipse cx="76" cy="64" rx="18" ry="11" fill="url(#gRib)" opacity="0.5" transform="rotate(-22 76 64)"/>
+        <!-- bow right -->
+        <ellipse cx="104" cy="64" rx="18" ry="11" fill="#1d2d3e" transform="rotate(22 104 64)" filter="url(#fg)"/>
+        <ellipse cx="104" cy="64" rx="18" ry="11" fill="url(#gRib)" opacity="0.5" transform="rotate(22 104 64)"/>
+        <!-- bow knot -->
+        <ellipse cx="90" cy="66" rx="8" ry="7" fill="#243040" filter="url(#fs)"/>
+        <ellipse cx="90" cy="66" rx="8" ry="7" fill="url(#gRib)" opacity="0.7"/>
+
+        <!-- star accents -->
+        <circle cx="50" cy="140" r="1.5" fill="rgba(245,166,35,0.5)" filter="url(#fs)"/>
+        <circle cx="138" cy="120" r="1" fill="rgba(62,207,207,0.6)" filter="url(#fs)"/>
+        <circle cx="145" cy="88" r="1.5" fill="rgba(245,166,35,0.4)"/>
+        <circle cx="22" cy="105" r="1" fill="rgba(62,207,207,0.4)"/>
+        <text x="148" y="76" font-size="8" fill="rgba(245,166,35,0.4)" filter="url(#fs)">✦</text>
+        <text x="14" y="145" font-size="7" fill="rgba(62,207,207,0.35)" filter="url(#fs)">✧</text>
+      </svg>
+    </div>
+  </div>
+
+  <p class="box-cta-hint" id="box-hint" style="opacity:0">PENCET BOXNYA COBA✦</p>
+</section>
+
+<!-- ═══════ SCENE 3: LETTERS ═══════ -->
+<section id="scene-letters" class="scene">
+  <div class="letters-inner" id="letters-inner" style="opacity:0">
+
+    <div class="prog-row">
+      <div class="prog-bar-track"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+      <span class="prog-label" id="prog-label">1 / 5</span>
+    </div>
+
+    <div id="card-slot" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+      <!-- card injected here -->
+    </div>
+
+    <div class="letter-nav" id="letter-nav">
+      <button class="btn-ghost" id="btn-prev" disabled>← back</button>
+      <button class="btn-primary" id="btn-next">next →</button>
+    </div>
+
+    <p class="swipe-hint">swipe kiri / kanan</p>
+  </div>
+</section>
+
+<!-- ═══════ SCENE 4: ENDING ═══════ -->
+<section id="scene-ending" class="scene">
+  <div class="ending-chip" id="e-chip" style="opacity:0">✦ &nbsp; sudah selesai &nbsp; ✦</div>
+  <h1 class="ending-title" id="e-title" style="opacity:0">happy birthday,<br><em>ma.</em></h1>
+  <p class="ending-body" id="e-body" style="opacity:0">
+    semoga tahun ini yang lu semogakan di semogakan, terimakasih ya udah mau baca sampe akhir hehe<br>
+    
+  </p>
+  <a href="#" class="btn-portal" id="btn-portal" style="opacity:0">
+    <span class="portal-label">✦KALO MAU REVIEW BAKPIA PIE NYA, DISINI AJA✦</span>
+    <span class="portal-sub">PENCET COBA</span>
+    <span class="portal-hint">😋🤨😎👀</span>
+  </a>
+  <p class="ending-sign" id="e-sign" style="opacity:0">hbd hbd hbd hdb ✦</p>
+</section>
+
+<script>
+/* ════════════════════════════════════════
+   CONFIG — edit ini aja!
+════════════════════════════════════════ */
+const WA_NUMBER = '6282258280354'; // ganti nomor HP (tanpa +)
+
+const letters = [
+  {
+    title: "hal pertama ",
+    body: "selamat ulang tahun yaa. agak aneh ya, tapi gua emang mau ngucapin dan ngasih ini hehe.",
+    deco: "✦",
+  },
+  {
+    title: "mff yh kalo gasuka bakpianya",
+    body: "soalnya gua gatau lu suka rasa apa, karena yg keliatan red velvet jadinya gua ambil yg ini.",
+    deco: "◎",
+  },
+  {
+    title: "terakhir",
+    body: "gua nggak terlalu pinter nulis. tapi semoga yang disemogakan tersemogakan ya. hbd 🎉",
+    deco: "✧",
+  },
+];
+
+/* ════════════════════════════════════════
+   BACKGROUND CANVAS — animated gradient mesh
+════════════════════════════════════════ */
+const cv = document.getElementById('bg-canvas');
+const cx = cv.getContext('2d');
+let W, H;
+
+function resizeBg() {
+  W = cv.width  = window.innerWidth  * Math.min(devicePixelRatio, 2);
+  H = cv.height = window.innerHeight * Math.min(devicePixelRatio, 2);
+  cv.style.width  = window.innerWidth  + 'px';
+  cv.style.height = window.innerHeight + 'px';
+}
+resizeBg();
+window.addEventListener('resize', resizeBg, { passive: true });
+
+// orbs
+const orbs = [
+  { x:0.15, y:0.15, r:0.45, color:[62,207,207],  speed:0.00011, phase:0 },
+  { x:0.82, y:0.55, r:0.4,  color:[245,166,35],  speed:0.00008, phase:2.1 },
+  { x:0.45, y:0.85, r:0.38, color:[139,124,246], speed:0.00013, phase:4.3 },
+];
+
+// particles
+const parts = [];
+const PART_COUNT = 50;
+const PCOLS = [[245,166,35],[62,207,207],[232,234,240],[139,124,246]];
+for(let i=0;i<PART_COUNT;i++){
+  parts.push({
+    x: Math.random(), y: Math.random() + 0.1,
+    vx: (Math.random()-0.5)*0.00015,
+    vy: -(Math.random()*0.0002 + 0.00005),
+    s: Math.random()*1.8 + 0.4,
+    a: Math.random()*0.45 + 0.1,
+    c: PCOLS[Math.floor(Math.random()*PCOLS.length)],
+    life: Math.random(),
+  });
+}
+
+let lastT = 0;
+function drawBg(t) {
+  const dt = t - lastT; lastT = t;
+  cx.clearRect(0,0,W,H);
+
+  // fill dark base
+  cx.fillStyle = '#0d1117';
+  cx.fillRect(0,0,W,H);
+
+  // orbs
+  orbs.forEach(o => {
+    o.phase += o.speed * dt;
+    const ox = (o.x + Math.sin(o.phase) * 0.08) * W;
+    const oy = (o.y + Math.cos(o.phase * 0.7) * 0.07) * H;
+    const r  = o.r * Math.min(W,H);
+    const g  = cx.createRadialGradient(ox,oy,0,ox,oy,r);
+    g.addColorStop(0,   `rgba(${o.color},0.10)`);
+    g.addColorStop(0.5, `rgba(${o.color},0.04)`);
+    g.addColorStop(1,   `rgba(${o.color},0)`);
+    cx.fillStyle = g;
+    cx.fillRect(0,0,W,H);
+  });
+
+  // particles
+  parts.forEach(p => {
+    p.x += p.vx; p.y += p.vy; p.life += 0.002;
+    if(p.y < -0.05 || p.life > 1) {
+      p.x = Math.random(); p.y = 1.05;
+      p.vx = (Math.random()-0.5)*0.00015;
+      p.vy = -(Math.random()*0.0002+0.00005);
+      p.life = 0;
+    }
+    const fade = Math.sin(p.life * Math.PI);
+    cx.globalAlpha = p.a * fade;
+    cx.fillStyle = `rgb(${p.c})`;
+    cx.beginPath();
+    cx.arc(p.x*W, p.y*H, p.s * Math.min(W,H)/window.innerWidth, 0, Math.PI*2);
+    cx.fill();
+  });
+  cx.globalAlpha = 1;
+  requestAnimationFrame(drawBg);
+}
+requestAnimationFrame(drawBg);
+
+/* ════════════════════════════════════════
+   SCENE TRANSITIONS
+════════════════════════════════════════ */
+const flash = document.getElementById('flash');
+const sceneMap = {
+  intro:   document.getElementById('scene-intro'),
+  box:     document.getElementById('scene-box'),
+  letters: document.getElementById('scene-letters'),
+  ending:  document.getElementById('scene-ending'),
+};
+
+function goTo(from, to, cb) {
+  sceneMap[from].style.pointerEvents = 'none';
+  // quick flash
+  gsap.fromTo(flash,
+    { opacity: 0 },
+    { opacity: 0.12, duration: 0.15, ease:'power1.in',
+      onComplete: () => {
+        sceneMap[from].classList.remove('active');
+        gsap.set(sceneMap[from], { opacity: 0 });
+        sceneMap[to].classList.add('active');
+        if(cb) cb();
+        gsap.to(flash, { opacity: 0, duration: 0.4, ease:'power2.out' });
+      }
+    }
+  );
+}
+
+/* ════════════════════════════════════════
+   SCENE 1 — INTRO
+════════════════════════════════════════ */
+const typingEl = document.getElementById('typing-span');
+const caretEl  = document.getElementById('caret');
+const INTRO_WORDS = ['sesuatu', 'seseorang', 'satu momen…'];
+const FULL_TEXT = "Cieee Selamat \n HBD ✦";
+let charIdx = 0;
+
+function typeIn() {
+  if(charIdx < FULL_TEXT.length) {
+    typingEl.textContent += FULL_TEXT[charIdx] === '\n' ? ' ' : FULL_TEXT[charIdx];
+    charIdx++;
+    setTimeout(typeIn, charIdx < 12 ? 75 : 50);
+  } else {
+    caretEl.style.display = 'none';
+    gsap.to('#intro-sub', { opacity:1, y:0, duration:0.6, ease:'power2.out', delay:0.2 });
+    gsap.to('#btn-open',  { opacity:1, y:0, duration:0.7, ease:'back.out(1.5)', delay:0.55 });
+  }
+}
+
+// entrance
+gsap.set(['#intro-sub','#btn-open'], { y: 16 });
+gsap.fromTo('#scene-intro', { opacity:0 }, {
+  opacity:1, duration:1, ease:'power2.out',
+  onComplete: () => setTimeout(typeIn, 500)
+});
+
+document.getElementById('btn-open').addEventListener('click', () => goTo('intro','box', initBox));
+document.getElementById('btn-open').addEventListener('touchend', e => { e.preventDefault(); goTo('intro','box', initBox); });
+
+/* ════════════════════════════════════════
+   SCENE 2 — BOX
+════════════════════════════════════════ */
+function initBox() {
+  gsap.fromTo('#box-eyebrow', { opacity:0, y:16 }, { opacity:1, y:0, duration:0.7, delay:0.15, ease:'power2.out' });
+  gsap.fromTo('#gift-stage',  { opacity:0, scale:0.75, y:20 }, { opacity:1, scale:1, y:0, duration:0.9, delay:0.35, ease:'back.out(1.7)' });
+  setTimeout(() => {
+    gsap.set('#box-hint', { opacity:0 });
+    gsap.to('#box-hint', { opacity:0.7, duration:0.5, ease:'power2.out' });
+  }, 1200);
+}
+
+let boxOpened = false;
+const giftStage = document.getElementById('gift-stage');
+
+function openBox() {
+  if(boxOpened) return; boxOpened = true;
+  gsap.to('#box-hint', { opacity:0, duration:0.2 });
+
+  // Lid animates up via GSAP on the SVG element
+  gsap.timeline()
+    .to(giftStage, { scale:1.08, duration:0.18, ease:'power2.in' })
+    .to('#svg-lid', { y:-80, rotation:-15, opacity:0, duration:0.5, ease:'back.in(1.2)',
+                      transformOrigin:'center center' })
+    .to(giftStage, { scale:1, duration:0.3, ease:'elastic.out(1,0.5)' }, '-=0.1');
+
+  // confetti
+  setTimeout(() => {
+    const r = giftStage.getBoundingClientRect();
+    const ox = (r.left + r.width/2) / innerWidth;
+    const oy = (r.top  + r.height/2) / innerHeight;
+    confetti({ particleCount:80, spread:75, origin:{x:ox,y:oy},
+      colors:['#f5a623','#3ecfcf','#e8eaf0','#8b7cf6'],
+      gravity:0.85, scalar:0.9, ticks:200 });
+    confetti({ particleCount:25, spread:45, startVelocity:20, origin:{x:ox,y:oy},
+      colors:['#fff','#f5a623'], gravity:1, scalar:0.65, ticks:150 });
+  }, 280);
+
+  setTimeout(() => goTo('box','letters', initLetters), 1700);
+}
+
+giftStage.addEventListener('click', openBox);
+giftStage.addEventListener('touchend', e => { e.preventDefault(); openBox(); });
+
+/* ════════════════════════════════════════
+   SCENE 3 — LETTERS
+════════════════════════════════════════ */
+let curIdx = 0;
+
+function setProg(idx) {
+  document.getElementById('prog-fill').style.width = ((idx+1)/letters.length*100) + '%';
+  document.getElementById('prog-label').textContent = `${idx+1} / ${letters.length}`;
+}
+
+function renderCard(idx, dir) {
+  const slot = document.getElementById('card-slot');
+  const old  = slot.querySelector('.letter-card');
+  const L    = letters[idx];
+
+  if(old) {
+    gsap.to(old, { opacity:0, x: -38*dir, scale:0.95, duration:0.26, ease:'power2.in',
+      onComplete: () => { old.remove(); inject(); }});
+  } else { inject(); }
+
+  function inject() {
+    // build dots HTML
+    const dots = letters.map((_,i) =>
+      `<span class="fd ${i===idx?'on':i<idx?'past':''}"></span>`
+    ).join('');
+
+    const c = document.createElement('div');
+    c.className = 'letter-card';
+    c.style.cssText = 'flex:1;';
+    c.innerHTML = `
+      <div class="card-top-line"></div>
+      <div class="card-content">
+        <div>
+          <div class="card-num"><span class="card-num-accent"></span>pesan ${String(idx+1).padStart(2,'0')}</div>
+          <h2 class="card-title">${L.title}</h2>
+          <div class="card-rule"></div>
+          <p class="card-body">${L.body}</p>
+        </div>
+        <div class="card-footer">
+          <span class="card-footer-tag">${L.tag || 'HBD HBD HBD'}</span>
+          <div class="card-footer-dots">${dots}</div>
+        </div>
+      </div>
+      <div class="card-deco">${L.deco||'✦'}</div>`;
+    slot.appendChild(c);
+    gsap.fromTo(c, { opacity:0, x:38*dir, scale:0.96 },
+                   { opacity:1, x:0, scale:1, duration:0.42, ease:'power3.out' });
+  }
+
+  // update nav
+  document.getElementById('btn-prev').disabled = idx === 0;
+  document.getElementById('btn-next').textContent = idx === letters.length-1 ? 'selesai ✦' : 'next →';
+  setProg(idx); 
+}
+
+function initLetters() {
+  renderCard(0, 1);
+  gsap.fromTo('#letters-inner', { opacity:0, y:24 }, { opacity:1, y:0, duration:0.7, delay:0.15, ease:'power3.out' });
+}
+
+document.getElementById('btn-next').addEventListener('click', () => {
+  if(curIdx < letters.length-1) { curIdx++; renderCard(curIdx, 1); }
+  else goTo('letters','ending', initEnding);
+});
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if(curIdx > 0) { curIdx--; renderCard(curIdx, -1); }
+});
+
+// swipe
+let txStart = 0, tyStart = 0;
+document.getElementById('scene-letters').addEventListener('touchstart', e => {
+  txStart = e.touches[0].clientX; tyStart = e.touches[0].clientY;
+}, { passive:true });
+document.getElementById('scene-letters').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - txStart;
+  const dy = e.changedTouches[0].clientY - tyStart;
+  if(Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 44) {
+    if(dx < 0) {
+      if(curIdx < letters.length-1) { curIdx++; renderCard(curIdx, 1); }
+      else goTo('letters','ending', initEnding);
+    } else if(dx > 0 && curIdx > 0) { curIdx--; renderCard(curIdx, -1); }
+  }
+}, { passive:true });
+
+/* ════════════════════════════════════════
+   SCENE 4 — ENDING
+════════════════════════════════════════ */
+function initEnding() {
+  setTimeout(() => {
+    confetti({ particleCount:55, spread:100, origin:{x:0.5,y:0.25},
+      colors:['#f5a623','#3ecfcf','#e8eaf0','#8b7cf6'],
+      gravity:0.65, scalar:0.85, ticks:230 });
+  }, 350);
+
+  gsap.set(['#e-chip','#e-title','#e-body','#btn-portal','#e-sign'], { y:18, opacity:0 });
+  const tl = gsap.timeline({ delay:0.25 });
+  tl.to('#e-chip',    { opacity:1, y:0, duration:0.55, ease:'power2.out' })
+    .to('#e-title',   { opacity:1, y:0, duration:0.7,  ease:'power3.out' }, '-=0.2')
+    .to('#e-body',    { opacity:1, y:0, duration:0.6,  ease:'power2.out' }, '-=0.3')
+    .to('#btn-portal',{ opacity:1, y:0, duration:0.7,  ease:'back.out(1.4)' }, '-=0.2')
+    .to('#e-sign',    { opacity:1, y:0, duration:0.5,  ease:'power2.out' }, '-=0.15');
+}
+
+// Portal — on mobile: first tap shows hint, second navigates
+const portalBtn = document.getElementById('btn-portal');
+portalBtn.href = `https://wa.me/${082258280354}`;
+let portalTapped = false;
+portalBtn.addEventListener('touchend', e => {
+  e.preventDefault();
+  if(!portalTapped) {
+    portalTapped = true;
+    portalBtn.classList.add('hint-visible');
+  } else {
+    window.open(portalBtn.href, '_blank');
+  }
+});
+</script>
+</body>
+</html>
